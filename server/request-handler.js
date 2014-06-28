@@ -5,74 +5,83 @@
  * this file and include it in basic-server.js so that it actually works.
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 var fs = require('fs');
+var db = require('../SQL/db.js');
+var qs = require('querystring');
+
 var obj = {};
-// obj.results = [];
-obj.results = JSON.parse(fs.readFileSync('messages.txt')).results;
-// console.log(fs.readFileSync('messages.txt'));
+obj.results = [];
+//obj.results = JSON.parse(fs.readFileSync('messages.txt')).results;
 
 exports.handler = function(request, response) {
-  /* the 'request' argument comes from nodes http module. It includes info about the
-  request - such as what URL the browser is requesting. */
 
-  /* Documentation for both request and response can be found at
-   * http://nodemanual.org/0.8.14/nodejs_ref_guide/http.html */
-
-
-  console.log("Serving request type " + request.method + " for url " + request.url);
-
-  /* Without this line, this server wouldn't work. See the note
-   * below about CORS. */
   var headers = defaultCorsHeaders;
-  headers['Content-Type'] = "application/json";//******changed from plain text to json
+  headers['Content-Type'] = "application/json";
   var statusCode;
   var urlArray = request.url.split('/');
 
-  if (request.method == "GET" && urlArray[1] === 'classes') {
+  if (request.method === 'GET' && urlArray[1] === 'classes') {
 
     statusCode = 200;
     response.writeHead(statusCode, headers);
+
     var readMessages = fs.readFileSync('messages.txt');
-    // response.end(JSON.stringify(obj));
-    // console.log(JSON.parse(readMessages));
+
+
+
+    //
     response.end(JSON.stringify(JSON.parse(readMessages)));
 
-  } else if(request.method == "POST" && urlArray[1] === 'classes') {
+  } else if(request.method === 'POST' && urlArray[1] === 'classes') {
+    var msg = '';
 
     request.on('data', function(chunk){
+      msg += chunk;
+    });
+    request.on('end', function() {
       statusCode = 201;
       response.writeHead(statusCode, headers);
-      //*** without parse, console result is :<Buffer 7b 22 .....7d>
-      //*** if chunk.toString() console result is : {"username":"Jono","message":"Do my bidding!"}
-      //*** if JSON.parse(chunk) console result is object {username: "Jono", message: "Do my didding!"}
-      obj.results.unshift(JSON.parse(chunk));
-      var msg = JSON.stringify(obj);
-      // console.log(msg);
-      fs.writeFileSync('messages.txt', msg);
-      response.end(msg);//***still works fine if I move this line down
+
+      //msg = qs.parse(msg);
+      obj.results.unshift(msg);
+      // eventually call save to database
+
+      console.log('msg=' + obj);
+      // Grab user name and check if the user has already been
+      // entered in the database.
+
+      // Select user by name should either select the record and
+      // return the contents or insert the record and return the
+      // contents.
+      // db.selectUserByName(userName, function(err, data) {{
+      //   if (err) {
+      //     console.log('Error on selectUserByName. err=' + err);
+      //   } else {
+      //     // Should have something like {id: ??, name: joe}
+
+      //     // Once we have the user object & room object, we
+      //     // can save the message
+
+
+      //     console.log(data);
+      //   };
+      // }});
+      //fs.writeFileSync('messages.txt', msg);
+      response.end(msg);
+
     });
 
-  } else if ( request.method == "OPTIONS") {
+
+  } else if ( request.method === "OPTIONS") {
     statusCode = 200;
     response.writeHead(statusCode, headers);
     response.end();
   } else {
-
     statusCode = 404;
     response.writeHead(statusCode, headers);
     response.end("yolo");
-
   }
-  /* Make sure to always call response.end() - Node will not send
-   * anything back to the client until you do. The string you pass to
-   * response.end() will be the body of the response - i.e. what shows
-   * up in the browser.*/
 };
 
-/* These headers will allow Cross-Origin Resource Sharing (CORS).
- * This CRUCIAL code allows this server to talk to websites that
- * are on different domains. (Your chat client is running from a url
- * like file://your/chat/client/index.html, which is considered a
- * different domain.) */
 var defaultCorsHeaders = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET, POST, PUT, DELETE, OPTIONS",
