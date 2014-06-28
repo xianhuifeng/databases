@@ -10,15 +10,19 @@ describe("Persistent Node Chat Server", function() {
 
   beforeEach(function(done) {
     dbConnection = mysql.createConnection({
-    /* Fill this out with your mysql username */
       user: "root",
-    /* and password. */
       password: "",
       database: "chat"
     });
-    dbConnection.connect();
+    dbConnection.connect(function(err){
+      if (err) {
+        console.error('error connection: ' + err.stack);
+        return;
+      }
+      console.log('testing live db connected');
+    });
 
-    var tablename = "message"; // TODO: fill this out
+    var tablename = "message";
 
     /* Empty the db table before each test so that multiple tests
      * (or repeated runs of the tests) won't screw each other up: */
@@ -35,14 +39,15 @@ describe("Persistent Node Chat Server", function() {
              uri: "http://127.0.0.1:3000/classes/room1",
              form: {username: "Valjean",
                     text: "In mercy's name, three days is all I need.",
-                    roomname: "room1"}
+                  }
             },
             function(error, response, body) {
               /* Now if we look in the database, we should find the
                * posted message there. */
 
-              var queryString = "";
-              var queryArgs = [];
+              var queryString = "INSERT INTO message SET ?";
+              var queryArgs = [{username: "Valjean",
+                    text: "In mercy's name, three days is all I need."}];
               /* TODO: Change the above queryString & queryArgs to match your schema design
                * The exact query string and query args to use
                * here depend on the schema you design, so I'll leave
@@ -50,6 +55,7 @@ describe("Persistent Node Chat Server", function() {
               dbConnection.query( queryString, queryArgs,
                 function(err, results, fields) {
                   // Should have one result:
+                  console.log(results);
                   expect(results.length).to.equal(1);
                   expect(results[0].username).to.equal("Valjean");
                   expect(results[0].message).to.equal("In mercy's name, three days is all I need.");

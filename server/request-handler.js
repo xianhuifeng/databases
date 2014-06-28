@@ -24,12 +24,13 @@ exports.handler = function(request, response) {
     statusCode = 200;
     response.writeHead(statusCode, headers);
 
-    var readMessages = fs.readFileSync('messages.txt');
+    // var readMessages = fs.readFileSync('../messages.txt');
 
-
-
-    //
-    response.end(JSON.stringify(JSON.parse(readMessages)));
+    db.selectMessages('black hole', function(msgArray) {
+      var results = {};
+      results['results'] = msgArray;
+      response.end(JSON.stringify(results));
+    });
 
   } else if(request.method === 'POST' && urlArray[1] === 'classes') {
     var msg = '';
@@ -65,7 +66,7 @@ exports.handler = function(request, response) {
       //     console.log(data);
       //   };
       // }});
-      //fs.writeFileSync('messages.txt', msg);
+      fs.writeFileSync('messages.txt', msg);
       response.end(msg);
 
     });

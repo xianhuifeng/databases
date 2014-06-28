@@ -43,11 +43,66 @@ exports.selectUsers = selectUsers = function(callback) {
   // });
 };
 
-exports.selectMessages = selectMessages = function(callback) {
-  // callback takes err & rows -- callback(err, rows)
-  dbConnection.query('select * from message', callback);
+exports.selectMessages = selectMessages = function(roomName, callback) {
+  // return array of messages like this:
+  // {"results":[{"username":"david","text":"something","roomname":"black hole"},
+  // {"username":"david","text":"iuhuh","roomname":"black hole"}]}
 
-};
+  // retrieve the id for the given roomName (hardcode for first use case)
+  roomName = 'black hole';
+
+  // select u.name as username, m.text as text, r.name as roomname
+  // from message m, room r, user u
+  // where m.room_id = r.id
+  // and m.user_id = u.id
+  // and r.name = 'black hole'
+  // order by m.time desc
+  var select =
+    'select u.name as username, m.text as text, r.name as roomname ' +
+    'from message m, room r, user u ' +
+    'where m.room_id = r.id ' +
+    'and m.user_id = u.id ' +
+    'and r.name = "' + roomName + '" ' +
+    'order by m.time desc';
+
+  dbConnection.query(select, function(err, rows) {
+    // loop through the results and populate our objects
+    // {username: u.name, text: m.text, roomname: r.name}
+    if (err) {
+      console.log('error :' + err);
+      return JSON.stringify({results:[]});
+    }
+
+    var msgArray = [];
+    for (var x=0; x<rows.length; x++) {
+      var row = rows[x];
+      console.log(row.username);
+      var msg =
+        { username: row.username,
+          text: row.text,
+          roomname: row.roomname
+        };
+      msgArray.push(msg);
+    }
+    callback(msgArray);
+  });
+
+  // Take all returned message objects and put them into an array
+  // Add array to another object with the key of 'results'
+
+  // Return JSON.stringify(results)
+
+
+
+  // Select details about the room.
+
+}
+
+// exports.selectMessages = selectMessages = function(callback) {
+//   // callback takes err & rows -- callback(err, rows)
+//   dbConnection.query('select * from message', callback);
+
+// };
 
 exports.selectRooms = selectRooms = function(callback) {
   // callback takes err & rows -- callback(err, rows)
