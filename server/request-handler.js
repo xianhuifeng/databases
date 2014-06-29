@@ -8,11 +8,9 @@ var fs = require('fs');
 var db = require('../SQL/db.js');
 var qs = require('querystring');
 
-var obj = {};
-obj.results = [];
-//obj.results = JSON.parse(fs.readFileSync('messages.txt')).results;
-
 exports.handler = function(request, response) {
+
+  var roomName = 'black hole';
 
   var headers = defaultCorsHeaders;
   headers['Content-Type'] = "application/json";
@@ -21,13 +19,10 @@ exports.handler = function(request, response) {
 
   if (request.method === 'GET' && urlArray[1] === 'classes') {
 
-    statusCode = 200;
-    response.writeHead(statusCode, headers);
-
-    // var readMessages = fs.readFileSync('../messages.txt');
-
-    db.selectMessages('black hole', function(msgArray) {
+    db.selectMessages(roomName, function(err, msgArray) {
       var results = {};
+      statusCode = 200;
+      response.writeHead(statusCode, headers);
       results['results'] = msgArray;
       response.end(JSON.stringify(results));
     });
@@ -41,37 +36,15 @@ exports.handler = function(request, response) {
     request.on('end', function() {
       statusCode = 201;
       response.writeHead(statusCode, headers);
+      msg = JSON.parse(msg);
+      console.log('msg to save: ' + msg);
+      db.saveMessage(msg, function(){
+        response.end(msg);
 
-      //msg = qs.parse(msg);
-      obj.results.unshift(msg);
-      // eventually call save to database
+      });
 
-      console.log('msg=' + obj);
-      // Grab user name and check if the user has already been
-      // entered in the database.
-
-      // Select user by name should either select the record and
-      // return the contents or insert the record and return the
-      // contents.
-      // db.selectUserByName(userName, function(err, data) {{
-      //   if (err) {
-      //     console.log('Error on selectUserByName. err=' + err);
-      //   } else {
-      //     // Should have something like {id: ??, name: joe}
-
-      //     // Once we have the user object & room object, we
-      //     // can save the message
-
-
-      //     console.log(data);
-      //   };
-      // }});
-      fs.writeFileSync('messages.txt', msg);
-      response.end(msg);
-
+      // fs.writeFileSync('messages.txt', msg);
     });
-
-
   } else if ( request.method === "OPTIONS") {
     statusCode = 200;
     response.writeHead(statusCode, headers);
